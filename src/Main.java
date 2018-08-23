@@ -54,13 +54,20 @@ public class Main {
 
     private static List<String> postProcess(List<String> list) {
         List<String> newList = new ArrayList<>(list.size());
+        boolean match = false;
         for (String s : list) {
             if (s.startsWith("(")) {
+                match = true;
                 newList.add("(");
                 newList.add(s.substring(1));
-            } else if (s.endsWith(")")) {
-                newList.add(s.substring(0, s.length() - 1));
-                newList.add(")");
+            } else if (s.endsWith(")") && !s.contains("(")) {
+                if (match) {
+                    newList.add(s.substring(0, s.length() - 1));
+                    newList.add(")");
+                } else {
+                    newList.add(s);
+                }
+                match = false;
             } else {
                 newList.add(s);
             }
@@ -100,8 +107,27 @@ public class Main {
         sql = sql.replaceAll(" *(\\))", "$1");
         sql = Pattern.compile(" *([,!=<>+\\-/%]) *").matcher(sql).replaceAll("$1");
         sql = Pattern.compile("(?<!select) *(\\*) *(?!from)", Pattern.CASE_INSENSITIVE).matcher(sql).replaceAll("$1");
-        sql = Pattern.compile("(?<!\\w)(\\(select .*?\\))").matcher(sql).replaceAll("#child");
         if (sql.endsWith(";")) sql = sql.substring(0, sql.length() - 1);
+
+        int index;
+        while ((index = Math.max(sql.indexOf("(select"), sql.indexOf("(SELECT"))) > 0) {
+            int sum = -1, offset = index + 1;
+            do {
+                int i1 = sql.indexOf('(', offset);
+                if (i1 < 0) i1 = Integer.MAX_VALUE;
+                int i2 = sql.indexOf(')', offset);
+                if (i2 < 0) i2 = Integer.MAX_VALUE;
+                if (i1 < i2) {
+                    sum--;
+                    offset = i1 + 1;
+                } else {
+                    sum++;
+                    offset = i2 + 1;
+                }
+            } while (sum != 0);
+            sql = sql.replace(sql.substring(index, offset), "#child");
+        }
+
         return sql;
     }
 }
